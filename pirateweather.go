@@ -8,11 +8,8 @@ import (
 	"flag"
 	"time"
 	"regexp"
-//	"strconv"
 	"io/ioutil"
 	"os"
-
-	gp "github.com/shawntoffel/go-pirateweather"
 )
 
 type TimeValue struct {
@@ -267,6 +264,12 @@ type ForecastNew struct {
 	} `json:"flags"`
 }
 
+type Weather struct {
+	Summary             string
+	Temperature         float64
+	ApparentTemperature float64
+}
+
 type CensusGeocode struct {
 	Result struct {
 		Input struct {
@@ -343,21 +346,8 @@ func getData(url string) (string, error) {
 	return string(content), nil
 }
 
-func getForecast(key string, latitude float64, longitude float64, time string) (gp.ForecastResponse, error) {
-	var res gp.ForecastResponse
-	surl := ""
-	var err error
-	if len(time) > 0 {
-		surl, err = makeForecastURL(piratetime, key, fmt.Sprintf("%g,%g", latitude, longitude), time)
-	} else {
-		surl, err = makeForecastURL(piratebase, key, fmt.Sprintf("%g,%g", latitude, longitude), time)
-	}
-
-	if err != nil {
-		return res, err
-	}
-
-	fmt.Println(surl)
+func makeNewForecast(surl string) (ForecastNew, error) {
+	var res ForecastNew
 	data, err := getData(surl)
 	if err != nil {
 		return res, err
@@ -367,6 +357,59 @@ func getForecast(key string, latitude float64, longitude float64, time string) (
 	if err != nil {
 		return res, err
 	}
+
+	return res, nil
+}
+
+func makeOldForecast(surl string) (ForecastOld, error) {
+	var res ForecastOld
+	data, err := getData(surl)
+	if err != nil {
+		return res, err
+	}
+
+	err = json.Unmarshal([]byte(data), &res)
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
+}
+
+func getForecast(key string, latitude float64, longitude float64, time string) (Weather, error) {
+	var res Weather
+	surl := ""
+	var err error
+	if len(time) > 0 {
+		surl, err = makeForecastURL(piratetime, key, fmt.Sprintf("%g,%g", latitude, longitude), time)
+		if err != nil {
+			return res, err
+		}
+
+		odata, err := makeOldForecast(surl)
+		if err != nil {
+			return res, err
+		}
+
+		res.Summary = odata.Currently.Summary
+		res.Temperature = odata.Currently.Temperature
+		res.ApparentTemperature = odata.Currently.ApparentTemperature
+	} else {
+		surl, err = makeForecastURL(piratebase, key, fmt.Sprintf("%g,%g", latitude, longitude), time)
+		if err != nil {
+			return res, err
+		}
+
+		ndata, err := makeNewForecast(surl)
+		if err != nil {
+			return res, err
+		}
+
+		res.Summary = ndata.Currently.Summary
+		res.Temperature = ndata.Currently.Temperature
+		res.ApparentTemperature = ndata.Currently.ApparentTemperature
+	}
+
 
 	return res, nil
 }
@@ -418,7 +461,6 @@ func main() {
 
 	if *tstart != tzeug {
 		tstr = fmt.Sprintf("%d", tstart.Unix())
-		fmt.Println(tstr)
 	}
 
 	geo, err := getLocation(*loc)
@@ -457,11 +499,10 @@ func main() {
 		match = geo.Result.AddressMatches[i].MatchedAddress
 	}
 
-	fmt.Printf("%g, %g, %s\n", lat, long, tstr)
 	weather, err := getForecast(key, lat, long, tstr)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Weather at %s (%g, %g) is %s %g %s\n", match, lat, long, weather.Currently.Summary, weather.Currently.ApparentTemperature, weather.Flags.Units)
+	fmt.Printf("Weather at %s (%g, %g) is %s %g (feels like %g)\n", match, lat, long, weather.Summary, weather.Temperature, weather.ApparentTemperature)
 }
