@@ -213,6 +213,10 @@ func main() {
 	*tstart = tzeug
 	flag.Var(&TimeValue{tstart}, "time", "time to get weather from, RFC 3339 format with optional time and time zone, default to local time (2017-11-01[T00:00:00[-07:00]])")
 	flag.Parse()
+	key := os.Getenv("PIRATEWEATHER")
+	if len(key) == 0 {
+		panic("No API key set at PIRATEWEATHER environment variable")
+	}
 
 	if *tstart != tzeug {
 		tstr = fmt.Sprintf("%d", tstart.Unix())
@@ -252,11 +256,6 @@ func main() {
 		lat = geo.Result.AddressMatches[i].Coordinates.Y
 		long = geo.Result.AddressMatches[i].Coordinates.X
 		match = geo.Result.AddressMatches[i].MatchedAddress
-	}
-
-	key := os.Getenv("PIRATEWEATHER")
-	if len(key) == 0 {
-		panic("No API key set at PIRATEWEATHER environment variable")
 	}
 
 	weather, err := getForecast(key, lat, long, tstr)
