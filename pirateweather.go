@@ -266,7 +266,7 @@ type ForecastNew struct {
 
 type Minutely struct {
 	Time                int64
-	PrecipIntenisty     float64
+	PrecipIntensity     float64
 	PrecipProbability   float64
 	PrecipType          string
 }
@@ -430,7 +430,7 @@ func getForecast(key string, latitude float64, longitude float64, time string) (
 		res.ApparentTemperature = odata.Currently.ApparentTemperature
 		hourdat := odata.Hourly.Data
 		for i:= 0; i < len(hourdat); i++ {
-			res.Hours = append(res.Hours, Hourly{hourdat[i].Time, hourdat[i].PrecipAccumulation, hourdat[i].PrecipType, hourdat[i].Temperature, hourdat[i].ApparentTemperature, hourdat[i].WindSpeed, hourdat[i].WindBearing, hourdat[i].PrecipIntensity, -1.0})
+			res.Hours = append(res.Hours, Hourly{hourdat[i].Time, hourdat[i].PrecipAccumulation, hourdat[i].PrecipType, hourdat[i].Temperature, hourdat[i].ApparentTemperature, hourdat[i].WindSpeed, hourdat[i].WindBearing, -1.0, -1.0})
 		}
 
 		daydat := odata.Daily.Data
