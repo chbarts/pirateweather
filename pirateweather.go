@@ -510,6 +510,14 @@ var hourly = flag.Bool("hourly", false, "Show hourly forecast on current or old 
 var daily = flag.Bool("daily", false, "Show daily forecast on current or old weather")
 var tzeug = time.Date(1880, time.November, 10, 23, 0, 0, 0, time.UTC)
 
+func showgust(val float64) string {
+	if val == -1.0 {
+		return "none"
+	} else {
+		return fmt.Sprintf("%g", val)
+	}
+}
+
 func main() {
 	tstr := ""
 	*tstart = tzeug
@@ -574,7 +582,7 @@ func main() {
 		fmt.Println("Daily forecast:")
 		for i := 0; i < len(weather.Days); i++ {
 			day := weather.Days[i]
-			fmt.Printf("%v\t%s High: %g Low: %g Accum: %g (%s) Wind Speed: %g Bearing %g Gust %g\n", time.Unix(day.Time, 0).Local(), day.Summary, day.TemperatureHigh, day.TemperatureLow, day.PrecipAccumulation, day.PrecipType, day.WindSpeed, day.WindBearing, day.WindGust)
+			fmt.Printf("%v\t%s High: %g Low: %g Accum: %g (%s) Wind Speed: %g Bearing %g Gust %s\n", time.Unix(day.Time, 0).Local(), day.Summary, day.TemperatureHigh, day.TemperatureLow, day.PrecipAccumulation, day.PrecipType, day.WindSpeed, day.WindBearing, showgust(day.WindGust))
 		}
 	}
 
@@ -582,7 +590,7 @@ func main() {
 		fmt.Println("Hourly forecast:")
 		for i := 0; i < len(weather.Hours); i++ {
 			hour := weather.Hours[i]
-			fmt.Printf("%v\tTemp: %g (Feels like %g) Accum: %g (Intensity %g, %s) Wind Speed: %g Bearing %g Gust %g\n", time.Unix(hour.Time, 0).Local(), hour.Temperature, hour.ApparentTemperature, hour.PrecipAccumulation, hour.PrecipIntensity, hour.PrecipType, hour.WindSpeed, hour.WindBearing, hour.WindGust)
+			fmt.Printf("%v\tTemp: %g (Feels like %g) Accum: %g (Intensity %s, %s) Wind Speed: %g Bearing %g Gust %s\n", time.Unix(hour.Time, 0).Local(), hour.Temperature, hour.ApparentTemperature, hour.PrecipAccumulation, showgust(hour.PrecipIntensity), hour.PrecipType, hour.WindSpeed, hour.WindBearing, showgust(hour.WindGust))
 		}
 	}
 
