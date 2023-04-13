@@ -520,7 +520,7 @@ func main() {
 		panic("No API key set at PIRATEWEATHER environment variable")
 	}
 
-	if *minutely && (*tstart != *tzeug) {
+	if *minutely && (*tstart != tzeug) {
 		panic("Can't do minutely forecast if time is specified")
 	}
 
