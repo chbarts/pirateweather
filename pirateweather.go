@@ -264,10 +264,44 @@ type ForecastNew struct {
 	} `json:"flags"`
 }
 
+type Minutely struct {
+	Time                int64
+	PrecipIntenisty     float64
+	PrecipProbability   float64
+	PrecipType          string
+}
+
+type Hourly struct {
+	Time                int64
+	PrecipAccumulation  float64
+	PrecipType          string
+	Temperature         float64
+	ApparentTemperature float64
+	WindSpeed           float64
+	WindBearing         float64
+	PrecipIntensity     float64
+	WindGust            float64
+}
+
+type Daily struct {
+	Time                int64
+	Summary             string
+	TemperatureHigh     float64
+	TemperatureLow      float64
+	PrecipAccumulation  float64
+	PrecipType          string
+	WindSpeed           float64
+	WindGust            float64
+	WindBearing         float64
+}
+
 type Weather struct {
 	Summary             string
 	Temperature         float64
 	ApparentTemperature float64
+	Minutes             []Minutely
+	Hours               []Hourly
+	Days                []Daily
 }
 
 type CensusGeocode struct {
@@ -394,6 +428,16 @@ func getForecast(key string, latitude float64, longitude float64, time string) (
 		res.Summary = odata.Currently.Summary
 		res.Temperature = odata.Currently.Temperature
 		res.ApparentTemperature = odata.Currently.ApparentTemperature
+		hourdat := odata.Hourly.Data
+		for i:= 0; i < len(hourdat); i++ {
+			res.Hours = append(res.Hours, Hourly{hourdat[i].Time, hourdat[i].PrecipAccumulation, hourdat[i].PrecipType, hourdat[i].Temperature, hourdat[i].ApparentTemperature, hourdat[i].WindSpeed, hourdat[i].WindBearing, hourdat[i].PrecipIntensity, -1.0})
+		}
+
+		daydat := odata.Daily.Data
+		for i := 0; i < len(daydat); i++ {
+			res.Days = append(res.Days, Daily{daydat[i].Time, daydat[i].Summary, daydat[i].TemperatureHigh, daydat[i].TemperatureLow, daydat[i].PrecipAccumulation, daydat[i].PrecipType, daydat[i].WindSpeed, -1.0, daydat[i].WindBearing})
+		}
+
 	} else {
 		surl, err = makeForecastURL(piratebase, key, fmt.Sprintf("%g,%g", latitude, longitude), time)
 		if err != nil {
@@ -408,6 +452,20 @@ func getForecast(key string, latitude float64, longitude float64, time string) (
 		res.Summary = ndata.Currently.Summary
 		res.Temperature = ndata.Currently.Temperature
 		res.ApparentTemperature = ndata.Currently.ApparentTemperature
+		mindat := ndata.Minutely.Data
+		for i := 0; i < len(mindat); i++ {
+			res.Minutes = append(res.Minutes, Minutely{mindat[i].Time, mindat[i].PrecipIntensity, mindat[i].PrecipProbability, mindat[i].PrecipType})
+		}
+
+		hourdat := ndata.Hourly.Data
+		for i:= 0; i < len(hourdat); i++ {
+			res.Hours = append(res.Hours, Hourly{hourdat[i].Time, hourdat[i].PrecipAccumulation, hourdat[i].PrecipType, hourdat[i].Temperature, hourdat[i].ApparentTemperature, hourdat[i].WindSpeed, hourdat[i].WindBearing, hourdat[i].PrecipIntensity, hourdat[i].WindGust})
+		}
+
+		daydat := ndata.Daily.Data
+		for i := 0; i < len(daydat); i++ {
+			res.Days = append(res.Days, Daily{daydat[i].Time, daydat[i].Summary, daydat[i].TemperatureHigh, daydat[i].TemperatureLow, daydat[i].PrecipAccumulation, daydat[i].PrecipType, daydat[i].WindSpeed, daydat[i].WindGust, daydat[i].WindBearing})
+		}
 	}
 
 
@@ -447,6 +505,9 @@ func getLocation(address string) (CensusGeocode, error) {
 
 var tstart = &time.Time{}
 var loc = flag.String("location", "1600 Pennsylvania Avenue NW, Washington, DC 20500", "location in the United States of America")
+var minutely = flag.Bool("minutely", false, "Show minutely forecast on current weather only")
+var hourly = flag.Bool("hourly", false, "Show hourly forecast on current or old weather")
+var daily = flag.Bool("daily", false, "Show daily forecast on current or old weather")
 var tzeug = time.Date(1880, time.November, 10, 23, 0, 0, 0, time.UTC)
 
 func main() {
@@ -505,4 +566,10 @@ func main() {
 	}
 
 	fmt.Printf("Weather at %s (%g, %g) is %s %g (feels like %g)\n", match, lat, long, weather.Summary, weather.Temperature, weather.ApparentTemperature)
+	if *daily {
+		for i := 0; i < len(weather.Days); i++ {
+			day := weather.Days[i]
+			fmt.Printf("%v\t%s High: %g Low: %g Accum: %g (%s) Wind Speed: %g Bearing %g Gust %g\n", time.Unix(day.Time, 0).Local(), day.Summary, day.TemperatureHigh, day.TemperatureLow, day.PrecipAccumulation, day.PrecipType, day.WindSpeed, day.WindBearing, day.WindGust)
+		}
+	}
 }
