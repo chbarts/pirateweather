@@ -520,6 +520,10 @@ func main() {
 		panic("No API key set at PIRATEWEATHER environment variable")
 	}
 
+	if *minutely && (*tstart != *tzeug) {
+		panic("Can't do minutely forecast if time is specified")
+	}
+
 	if *tstart != tzeug {
 		tstr = fmt.Sprintf("%d", tstart.Unix())
 	}
@@ -567,9 +571,26 @@ func main() {
 
 	fmt.Printf("Weather at %s (%g, %g) is %s %g (feels like %g)\n", match, lat, long, weather.Summary, weather.Temperature, weather.ApparentTemperature)
 	if *daily {
+		fmt.Println("Daily forecast:")
 		for i := 0; i < len(weather.Days); i++ {
 			day := weather.Days[i]
 			fmt.Printf("%v\t%s High: %g Low: %g Accum: %g (%s) Wind Speed: %g Bearing %g Gust %g\n", time.Unix(day.Time, 0).Local(), day.Summary, day.TemperatureHigh, day.TemperatureLow, day.PrecipAccumulation, day.PrecipType, day.WindSpeed, day.WindBearing, day.WindGust)
+		}
+	}
+
+	if *hourly {
+		fmt.Println("Hourly forecast:")
+		for i := 0; i < len(weather.Hours); i++ {
+			hour := weather.Hours[i]
+			fmt.Printf("%v\tTemp: %g (Feels like %g) Accum: %g (Intensity %g, %s) Wind Speed: %g Bearing %g Gust %g\n", time.Unix(hour.Time, 0).Local(), hour.Temperature, hour.ApparentTemperature, hour.PrecipAccumulation, hour.PrecipIntensity, hour.PrecipType, hour.WindSpeed, hour.WindBearing, hour.WindGust)
+		}
+	}
+
+	if *minutely {
+		fmt.Println("Minutely forecast:")
+		for i:= 0; i < len(weather.Minutes); i++ {
+			minute := weather.Minutes[i]
+			fmt.Printf("%v\tPrecipitation probability %g%% (Intensity %g, %s)\n", time.Unix(minute.Time, 0).Local(), minute.PrecipProbability, minute.PrecipIntensity, minute.PrecipType)
 		}
 	}
 }
