@@ -503,8 +503,8 @@ func getLocation(address string) (CensusGeocode, error) {
 	return res, nil
 }
 
+var defloc = os.Getenv("PIRATEWEATHERLOC")
 var tstart = &time.Time{}
-var loc = flag.String("location", "1600 Pennsylvania Avenue NW, Washington, DC 20500", "location in the United States of America")
 var minutely = flag.Bool("minutely", false, "Show minutely forecast on current weather only")
 var hourly = flag.Bool("hourly", false, "Show hourly forecast on current or old weather")
 var daily = flag.Bool("daily", false, "Show daily forecast on current or old weather")
@@ -519,9 +519,14 @@ func showgust(val float64) string {
 }
 
 func main() {
+	if len(defloc) == 0 {
+		defloc = "1600 Pennsylvania Avenue NW, Washington, DC 20500"
+	}
+
 	tstr := ""
 	*tstart = tzeug
-	flag.Var(&TimeValue{tstart}, "time", "time to get weather from, RFC 3339 format with optional time and time zone, default to local time (2017-11-01[T00:00:00[-07:00]])")
+	flag.Var(&TimeValue{tstart}, "time", "time to get weather from, RFC 3339 format (2017-11-01[T00:00:00[-07:00]]) with optional time and time zone, default to current time")
+	var loc = flag.String("location", defloc, "location in the United States of America, can set default using PIRATEWEATHERLOC environment variable")
 	flag.Parse()
 	key := os.Getenv("PIRATEWEATHER")
 	if len(key) == 0 {
